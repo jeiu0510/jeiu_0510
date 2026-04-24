@@ -4,14 +4,34 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>JEIU RPG Character Gacha</title>
-<style>
+
+ <style>
   * { box-sizing: border-box; }
   :root {
     --gold: #f3c476;
     --cream: #fff0dc;
     --dark: #050407;
   }
+#gachaVideo {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  display: none;
+  z-index: 999;
+  background: black;
+}
 
+#videoOverlay {
+  position: fixed;
+  inset: 0;
+  background: black;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 998;
+  transition: 0.4s;
+}
   html, body {
     margin: 0;
     min-height: 100%;
@@ -335,21 +355,31 @@
   }
 
   function startGacha() {
-    if (locked) return;
-    locked = true;
-    const picked = randomItem(characters);
-    const summonImage = picked.summonImage || picked.image;
-    $('summonScene').style.setProperty('--summon-image', `url('${summonImage}')`);
-    makeSummonCards();
-    $('resultScene').classList.remove('show');
-    $('summonScene').classList.add('show');
-    setTimeout(() => renderResult(picked), 3300);
-    setTimeout(() => {
-      $('summonScene').classList.remove('show');
-      $('resultScene').classList.add('show');
-      locked = false;
-    }, 5000);
-  }
+  if (locked) return;
+  locked = true;
+
+  const picked = randomItem(characters);
+  const video = document.getElementById('gachaVideo');
+  const overlay = document.getElementById('videoOverlay');
+
+  overlay.style.opacity = 1;
+
+  setTimeout(() => {
+    video.style.display = 'block';
+    video.currentTime = 0;
+    video.play();
+    overlay.style.opacity = 0;
+  }, 400);
+
+  video.onended = () => {
+    video.style.display = 'none';
+
+    renderResult(picked);
+    document.getElementById('resultScene').classList.add('show');
+
+    locked = false;
+  };
+}
 
   function backHome() { $('resultScene').classList.remove('show'); renderHome(); }
   function showToast(text) { $('toast').textContent = text; $('toast').classList.add('show'); setTimeout(() => $('toast').classList.remove('show'), 1200); }
@@ -373,5 +403,7 @@
   $('copyBtn').onclick = copyResult;
   renderHome();
 </script>
+ <video id="gachaVideo" src="gacha.mp4" playsinline></video>
+<div id="videoOverlay"></div>
 </body>
 </html>
