@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>캐릭터 가챠 시스템</title>
+    <style>
+        /* 기본 여백 제거 및 폰트 설정 */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Noto Serif KR', 'Malgun Gothic', serif; background-color: #050a15; color: #fff; overflow: hidden; }
+        
+        /* 메인 배경: 작가님의 일러스트가 들어갈 자리입니다 */
+        #gacha-screen {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            /* ★ 중요: 아래 url 안에 작가님의 윤제이 일러스트 파일명(예: background.jpg)을 넣으시면 완벽해집니다! ★ */
+            background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.7)); 
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* 우측 상단 재화 (다이아, 티켓) */
+        .top-bar { position: absolute; top: 20px; right: 50px; display: flex; gap: 20px; z-index: 10; font-family: sans-serif;}
+        .currency { background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; display: flex; align-items: center; gap: 10px; border: 1px solid #555; }
+
+        /* 좌측 텍스트 영역 (캐릭터 이름 및 설명) */
+        .text-area { position: absolute; top: 15%; left: 8%; width: 450px; z-index: 10; text-shadow: 2px 2px 4px rgba(0,0,0,0.9); }
+        .limited-text { font-size: 1.1rem; color: #e6ddc5; letter-spacing: 2px; }
+        .char-name { font-size: 5rem; font-weight: bold; margin: 0; color: #e1ecf7; font-family: 'Batang', serif;}
+        .char-quote { font-size: 1.2rem; margin-bottom: 25px; color: #cfd8e3;}
+        .ssr-badge { display: inline-flex; align-items: center; gap: 10px; border: 1px solid #d4af37; padding: 5px 15px; font-size: 1.2rem; color: #e6ddc5; background: rgba(0,20,40,0.6); }
+
+        /* 가챠 버튼 영역 */
+        .gacha-action { position: absolute; bottom: 8%; right: 8%; z-index: 10; }
+        .pull-button {
+            background: linear-gradient(to bottom, #d6b872, #997435);
+            border: 2px solid #fbe69e;
+            padding: 15px 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1a1a1a;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            transition: all 0.1s ease;
+            text-align: center;
+            line-height: 1.4;
+        }
+        .pull-button:hover { filter: brightness(1.2); }
+        .pull-button:active { transform: scale(0.95); }
+
+        /* 뽑기 결과 모달창 */
+        #result-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 100; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .result-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 40px; }
+        
+        /* 카드 디자인 및 애니메이션 */
+        .card {
+            width: 140px; height: 200px; background: #1a1a1a; border: 1px solid #333;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+            opacity: 0; transform: translateY(20px); animation: slideUp 0.4s forwards;
+            position: relative; overflow: hidden;
+        }
+        .card.SSR { border-color: #fbe69e; box-shadow: 0 0 20px rgba(212, 175, 55, 0.6); background: linear-gradient(135deg, #4a3b1a, #1a1508); }
+        .card.SR { border-color: #b57edc; box-shadow: 0 0 15px rgba(181, 126, 220, 0.5); background: linear-gradient(135deg, #2a1a3a, #110a18); }
+        
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+        
+        .close-btn { background: transparent; color: #fff; border: 1px solid #fff; padding: 10px 40px; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
+        .close-btn:hover { background: #fff; color: #000; }
+    </style>
+</head>
+<body>
+
+<div id="gacha-screen">
+    <div class="top-bar">
+        <div class="currency">💎 3,210 +</div>
+        <div class="currency">🎫 25</div>
+    </div>
+
+    <div class="text-area">
+        <div class="limited-text">✨ 한정 등장 ✨</div>
+        <div class="char-name">윤제이</div>
+        <div class="char-quote">"어둠 속에서도, 네가 있는 곳으로."</div>
+        <div class="ssr-badge"><span style="color:#d4af37; font-weight:bold;">SSR</span> 윤제이 <span style="font-size: 0.9em; color:#aaa;">🌙 달빛 배달부</span></div>
+        <h2 style="color: #fbe69e; font-size: 2.5rem; margin-top: 60px; margin-bottom: 5px;">SSR 확정 가챠</h2>
+        <p style="color: #ccc; margin-top: 0;">10회 뽑기 시 SSR 캐릭터 1명 확정!</p>
+    </div>
+
+    <div class="gacha-action">
+        <button class="pull-button" onclick="pull10()">
+            10회 뽑기<br>
+            <span style="font-size: 1rem; font-weight: normal; color: #333;">SSR 1명 확정! / 🎫 10</span>
+        </button>
+    </div>
+</div>
+
+<div id="result-modal">
+    <h1 style="color: #fbe69e; font-family: 'Batang', serif; margin-bottom: 30px; letter-spacing: 5px;">가챠 결과</h1>
+    <div class="result-grid" id="result-container"></div>
+    <button class="close-btn" onclick="closeModal()">확인</button>
+</div>
+
+<script>
+    // 🎲 작가님의 32명 캐릭터 데이터를 여기에 입력합니다. (임시로 몇 명만 넣어두었습니다)
+    const characters = {
+        SSR: ['윤제이(달빛 배달부)', '주성도', '레이든', '이든'],
+        SR: ['유신우', '카일', '정보길드장', '수석마법사'],
+        R: ['암살자', '기사', '용병', '상인', '정보원']
+    };
+
+    // 10회 뽑기 버튼을 눌렀을 때 실행되는 함수
+    function pull10() {
+        const resultContainer = document.getElementById('result-container');
+        resultContainer.innerHTML = ''; // 이전 결과 초기화
+        
+        // 10번 반복해서 캐릭터를 뽑습니다
+        for (let i = 0; i < 10; i++) {
+            let tier = 'R';
+            
+            // 마지막 10번째는 무조건 SSR 확정
+            if (i === 9) {
+                tier = 'SSR';
+            } else {
+                // 확률 설정 (SSR 5%, SR 20%, R 75%)
+                const rand = Math.random() * 100;
+                if (rand < 5) tier = 'SSR';      
+                else if (rand < 25) tier = 'SR'; 
+                else tier = 'R';                 
+            }
+
+            // 결정된 등급에서 무작위로 캐릭터 이름 가져오기
+            const pool = characters[tier];
+            const charName = pool[Math.floor(Math.random() * pool.length)];
+
+            // 카드 UI 생성 (순차적으로 나타나도록 딜레이 설정)
+            const card = document.createElement('div');
+            card.className = `card ${tier}`;
+            card.style.animationDelay = `${i * 0.15}s`; // 카드가 0.15초 간격으로 하나씩 등장
+            
+            // 카드 내부에 들어갈 글씨
+            const tierColor = tier === 'SSR' ? '#fbe69e' : tier === 'SR' ? '#b57edc' : '#ccc';
+            card.innerHTML = `
+                <span style="color: ${tierColor}; font-size: 1.5rem; font-weight: bold; font-family: sans-serif; margin-bottom: 15px;">${tier}</span>
+                <span style="font-size: 1rem; padding: 0 10px; word-break: keep-all;">${charName}</span>
+            `;
+            
+            resultContainer.appendChild(card);
+        }
+
+        // 결과 모달창을 화면에 띄웁니다
+        document.getElementById('result-modal').style.display = 'flex';
+    }
+
+    // 결과 확인 후 닫기 버튼 함수
+    function closeModal() {
+        document.getElementById('result-modal').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
